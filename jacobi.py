@@ -46,6 +46,48 @@ def fullBracket(A, x, i):
     return res
 
 # eps - точность, которую хотим получить
+def zeidel(A, b, eps):
+    # первичные значения, с которых начинаем вычисления
+    start = [0] * len(A)
+
+    # решения x по всем шагам
+    X_res = []
+    # пихаем первичные значения (чтобы начать вычисления с них)
+    X_res.append(start)
+    # задаем максимальную ошибку
+    error = float('inf')
+    # решение текущего шага
+    xn = [0] * len(A)
+    # номер итерации
+    k = 0
+    # совершаем итерации пока не достигнем желаемой точности
+    while error > eps:
+        # инкрементируем итерацию (нулевая итерация уже сделана, это первичные значения)
+        k += 1
+        # получаем значения решений с последней итерации
+        # используем slice, т.к. прямое присвоение копирует
+        # не значение массива, а ссылку на него
+        # тогда как slice генерирует новый объект
+        x = X_res[-1][:]
+        # текущие значения для первого значения решения равны предыдушему шагу
+        xc = x[:]
+        # вычисляем значения текущей итерации по формуле
+        for i in range(len(A)):
+            # опираемся на текущие значения
+            xn[i] = (1 / float(A[i][i])) * (b[i] - (fullBracket(A, xc, i) - A[i][i] * xc[i]))
+            # записываем текущее значения для дальнейших решений
+            xc[i] = xn[i]
+        # вставляем текущий шаг в список шагов
+        X_res.append(xn[:])
+        # вычисляем текущую ошибку
+        error = errorCalc(x, xn)
+        # если никак не можем подобраться к решению, ошибка скачет и прошло много итераций
+        if error > 10000 or k == 1000:
+            raise(RuntimeError('Итерации не сходятся'))
+    # после выполнения цикла возвращаем список решений
+    return X_res
+
+# eps - точность, которую хотим получить
 def jacobi(A, b, eps):
     # первичные значения, с которых начинаем вычисления
     start = [0] * len(A)
@@ -82,24 +124,32 @@ def jacobi(A, b, eps):
     # после выполнения цикла возвращаем список решений
     return X_res
 
-def printPlot(solution):
+def printPlot(solution, suptitle):
     solution = np.array(solution)
     xPlots = list()
     fig, ax = plt.subplots(3)
+    fig.suptitle(suptitle)
     for i in range(len(solution[0])):
         xPlots.append(solution[:, i])
         ax[i].set_xlabel('iter')
         ax[i].set_ylabel("x"+str(i+1))
         ax[i].plot( range(0, len(xPlots[i])), xPlots[i], marker='.', linestyle='-')
-    print(xPlots)
-    plt.show()
 
 if(isDiagDominant(A)):
     accuracy = 0.001
     solution = jacobi(A, b, accuracy)
-    print("Решено за " + str(len(solution) - 1) + " итераций с точностью " + str(accuracy))
+    print("Решено за " + str(len(solution) - 1) + " итераций с точностью " + str(accuracy) + " методом Якоби")
     print("Решение: ")
     print(solution[-1])
-    printPlot(solution)
+    printPlot(solution, "jacobi")
+
+    accuracy = 0.001
+    solution = zeidel(A, b, accuracy)
+    print("Решено за " + str(len(solution) - 1) + " итераций с точностью " + str(accuracy) + " методом Зейделя")
+    print("Решение: ")
+    print(solution[-1])
+    printPlot(solution, "zeidel")
+    
+    plt.show()
 else:
     print("Метод Якоби может не сходиться, матрица не имеет строчного диагонального преобладания")
