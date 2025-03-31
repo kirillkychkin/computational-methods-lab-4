@@ -1,3 +1,5 @@
+import numpy as np
+import matplotlib.pyplot as plt
 # исходные данные
 A = [[5, 2, -1], [-4, 8, 3], [2, -2, 5]]
 b = [12, 24, 9]
@@ -80,11 +82,24 @@ def jacobi(A, b, eps):
     # после выполнения цикла возвращаем список решений
     return X_res
 
+def printPlot(solution):
+    solution = np.array(solution)
+    xPlots = list()
+    fig, ax = plt.subplots(3)
+    for i in range(len(solution[0])):
+        xPlots.append(solution[:, i])
+        ax[i].set_xlabel('iter')
+        ax[i].set_ylabel("x"+str(i+1))
+        ax[i].plot( range(0, len(xPlots[i])), xPlots[i], marker='.', linestyle='-')
+    print(xPlots)
+    plt.show()
+
 if(isDiagDominant(A)):
     accuracy = 0.001
     solution = jacobi(A, b, accuracy)
     print("Решено за " + str(len(solution) - 1) + " итераций с точностью " + str(accuracy))
     print("Решение: ")
     print(solution[-1])
+    printPlot(solution)
 else:
     print("Метод Якоби может не сходиться, матрица не имеет строчного диагонального преобладания")
